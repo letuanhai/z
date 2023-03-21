@@ -1,4 +1,4 @@
-$safehome = if ([String]::IsNullOrWhiteSpace($Env:HOME)) { $env:USERPROFILE } else { $Env:HOME } 
+﻿$safehome = if ([String]::IsNullOrWhiteSpace($Env:HOME)) { $env:USERPROFILE } else { $Env:HOME } 
 $cdHistory = Join-Path -Path $safehome -ChildPath '\.cdHistory'
 
 <#
@@ -671,7 +671,7 @@ $MyInvocation.MyCommand.ScriptBlock.Module.OnRemove = {
 }
 
 #Override the existing CD command with the wrapper in order to log 'cd' commands.
-Set-item alias:cd -Value 'cdX'
+Set-item alias:cd -Value 'pushdX'
 
 Set-Alias -Name pushd -Value pushdX -Force -Option AllScope -Scope Global
 Set-Alias -Name popd -Value popdX -Force -Option AllScope -Scope Global

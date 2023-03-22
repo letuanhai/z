@@ -1,4 +1,4 @@
-$safehome = if ([String]::IsNullOrWhiteSpace($Env:HOME)) { $env:USERPROFILE } else { $Env:HOME } 
+﻿$safehome = if ([String]::IsNullOrWhiteSpace($Env:HOME)) { $env:USERPROFILE } else { $Env:HOME } 
 $cdHistory = Join-Path -Path $safehome -ChildPath '\.cdHistory'
 
 <#
@@ -711,15 +711,22 @@ if ((Test-Path -Path $cdHistory)) {
     $global:history += Get-Content -Path $cdHistory -Encoding UTF8 | Where-Object { (-not [String]::IsNullOrWhiteSpace($_)) } | ConvertTo-DirectoryEntry
 }
 
-$orig_cd = (Get-Alias -Name 'cd').Definition
-$MyInvocation.MyCommand.ScriptBlock.Module.OnRemove = {
-    set-item alias:cd -value $orig_cd
-}
+# $orig_cd = (Get-Alias -Name 'cd').Definition
+# $orig_pushd = (Get-Alias -Name 'pushd').Definition
+# $orig_popd = (Get-Alias -Name 'popd').Definition
+# $MyInvocation.MyCommand.ScriptBlock.Module.OnRemove = {
+#     set-item alias:cd -value $orig_cd
+#     set-item alias:pushd -value $orig_pushd
+#     set-item alias:popd -value $orig_popd
+# }
 
 #Override the existing CD command with the wrapper in order to log 'cd' commands.
-Set-item alias:cd -Value 'pushdX'
+# Set-item alias:cd -Value 'pushdX'
+# Set-item alias:pushd -Value 'pushdX'
+# Set-item alias:popd -Value 'popdX'
 
 Set-Alias -Name pushd -Value pushdX -Force -Option AllScope -Scope Global
+Set-Alias -Name cd -Value pushdX -Force -Option AllScope -Scope Global
 Set-Alias -Name popd -Value popdX -Force -Option AllScope -Scope Global
 
 Export-ModuleMember -Function z, cdX, pushdX, popdX, zz -Alias cd, pushd, popd

@@ -1,10 +1,10 @@
 # z
 
-z lets you quickly navigate the file system in PowerShell based on your `cd` command history. It's a port of [the z bash shell script.](README). Install it from the [official PowerShell gallery](https://www.powershellgallery.com/packages/z/).
+z lets you quickly navigate the file system in PowerShell based on your `cd` command history. It's a port of [the z bash shell script.](https://github.com/rupa/z). Install it from the [official PowerShell gallery](https://www.powershellgallery.com/packages/z-pushd).
 
 ## Goals
 
-Since June 2013 I have poured many hours building, tweaking and refining this script to work efficiently with PowerShell. It saves me a great deal of time navigating the file system, which is where I spent a lot of my time and has given me a great oportunity to learn PowerShell at a deeper level. There are no unit tests yet (I'll get around to it one day), but I wrote the script to save me time and learn PowerShell.
+Since June 2013 I have poured many hours building, tweaking and refining this script to work efficiently with PowerShell. It saves me a great deal of time navigating the file system, which is where I spent a lot of my time and has given me a great opportunity to learn PowerShell at a deeper level. There are no unit tests yet (I'll get around to it one day), but I wrote the script to save me time and learn PowerShell.
 
 The goal is quite simple, save time typing out the fully qualified path names of [frecently](https://developer.mozilla.org/en-US/docs/Mozilla/Tech/Places/Frecency_algorithm) accessed directories. It's stable and fast. Enjoy!
 
@@ -73,17 +73,17 @@ For those with Windows 10 and above, you can issue a `Install-Module z -AllowClo
 
 For those with Windows Vista or 7 who are using PowerShell version 3 or 4, you'll need to install [PackageManagement](http://go.microsoft.com/fwlink/?LinkID=746217&clcid=0x409) first before executing `Install-Module z -AllowClobber`.
 
-See the module listing in the [official PowerShell gallary](https://www.powershellgallery.com/packages/z/)
+See the module listing in the [official PowerShell gallery](https://www.powershellgallery.com/packages/z-pushd)
 
-Once complete, run the command `Import-Module z`. For ease of use I recomend placing this command in your [PowerShell startup profile](https://technet.microsoft.com/en-us/library/bb613488(v=vs.85).aspx). Typically `$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`
+Once complete, run the command `Import-Module z-pushd`. For ease of use I recommend placing this command in your [PowerShell startup profile](https://technet.microsoft.com/en-us/library/bb613488(v=vs.85).aspx). Typically `$PROFILE`.
 
 ### The hard way
 
-Download the `z.psm1` file and save it to your PowerShell module directory. The default location for this is `$env:USERPROFILE\Documents\WindowsPowerShell\Modules` (relative to your Documents folder). You can also extract it to another directory listed in your `$env:PSModulePath`. The full installation path should be `$env:USERPROFILE\Documents\WindowsPowerShell\Modules\z\z.psm1`.
+Download the `z-pushd.psm1` file and save it to your PowerShell module directory. The default location for this is `$env:USERPROFILE\Documents\WindowsPowerShell\Modules` (relative to your Documents folder). You can also extract it to another directory listed in your `$env:PSModulePath`. The full installation path should be `$env:USERPROFILE\Documents\WindowsPowerShell\Modules\z-pushd\z-pushd.psm1`.
 
-Assuming you want `z` to be avilable in every PowerShell session, open your profile script located at `$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` and add the following line.
+Assuming you want `z` to be available in every PowerShell session, open your profile script located at `$PROFILE` and add the following line.
 
-`Import-Module z`
+`Import-Module z-pushd`
 
 If the file `Microsoft.PowerShell_profile.ps1` does not exist, you can simply create it and it will be executed the next time a PowerShell session starts.
 
@@ -91,4 +91,4 @@ If the file `Microsoft.PowerShell_profile.ps1` does not exist, you can simply cr
 
 Once the module is installed and has been imported in to your session you can start jumping around. Remember, you need to build up the DB of directories first so be sure to `cd` around your file system. You can also use `z` as an alternative to the `cd` command.
 
-[ExampleUsage]: https://raw.githubusercontent.com/vincpa/z/master/example_usage.gif
+[ExampleUsage]: example_usage.gif

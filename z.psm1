@@ -33,8 +33,7 @@ Current PowerShell implementation is very crude and does not yet support all of 
 Although tracking of frequently used directories is obtained through the continued use of the "cd" command, the Windows registry is also scanned for frequently accessed paths.
 
 .LINK
-
-   https://github.com/vincpa/z
+https://github.com/letuanhai/z
 
 .EXAMPLE
 CD to the most frecent directory matching 'foo'
@@ -267,11 +266,74 @@ function popdX {
         }
     }
     <#
-
     .ForwardHelpTargetName Microsoft.PowerShell.Management\Pop-Location
     .ForwardHelpCategory Cmdlet
-
     #>
+}
+
+<#
+.SYNOPSIS
+Get the locations in the location stacks used by z, cd, pushd.
+
+.DESCRIPTION
+To store location history, this module provided wrapper for aliases commonly used for directory navigation: cd, pushd, popd.
+This module also uses Push-Location under the hood for all navigation commands (z, cd, pushd) to store the current
+navigation history (in the default unamed location stack).
+Due to the way Powershell work, all the location stacks used by commands in this module is not accessible to outside commands.
+(This may be due to them being on different *runspace*. See: https://go.microsoft.com/fwlink/?LinkID=113321#notes)
+This command allow you access the location used by commands from this module.
+
+.PARAMETER StackName
+Specifies, as a string array, the named location stacks. Enter one or more location stack names.
+If omitted, show the default unamed stack.
+
+.EXAMPLE
+Get the locations in location stack a and b
+> zz -StackName a, b
+#>
+function zz {
+    [CmdletBinding(SupportsTransactions = $true, HelpUri = 'https://go.microsoft.com/fwlink/?LinkID=113321')]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [string[]]
+        ${StackName}
+        )
+
+    begin {
+        try {
+            $outBuffer = $null
+            if ($PSBoundParameters.TryGetValue('OutBuffer', [ref]$outBuffer)) {
+                $PSBoundParameters['OutBuffer'] = 1
+            }
+
+            $PSBoundParameters['Stack'] = $true
+            $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('Microsoft.PowerShell.Management\Get-Location', [System.Management.Automation.CommandTypes]::Cmdlet)
+            $scriptCmd = { & $wrappedCmd @PSBoundParameters }
+            $steppablePipeline = $scriptCmd.GetSteppablePipeline($myInvocation.CommandOrigin)
+            $steppablePipeline.Begin($PSCmdlet)
+        }
+        catch {
+            throw
+        }
+    }
+
+    process {
+        try {
+            $steppablePipeline.Process($_)
+        }
+        catch {
+            throw
+        }
+    }
+
+    end {
+        try {
+            $steppablePipeline.End()
+        }
+        catch {
+            throw
+        }
+    }
 }
 
 # A wrapper function around the existing Set-Location Cmdlet.
@@ -660,7 +722,7 @@ Set-item alias:cd -Value 'pushdX'
 Set-Alias -Name pushd -Value pushdX -Force -Option AllScope -Scope Global
 Set-Alias -Name popd -Value popdX -Force -Option AllScope -Scope Global
 
-Export-ModuleMember -Function z, cdX, pushdX, popdX -Alias cd, pushd
+Export-ModuleMember -Function z, cdX, pushdX, popdX, zz -Alias cd, pushd, popd
 
 # Tab Completion
 $completion_RunningService = {

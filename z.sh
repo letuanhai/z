@@ -144,7 +144,7 @@ _z() {
         [ -f "$datafile" ] || return
 
         local cd
-        cd="$( < <( _z_dirs ) \awk -v t="$(\date +%s)" -v list="$list" -v typ="$typ" -v q="$fnd" -F"|" '
+        cd="$( < <( _z_dirs ) \awk -v t="$(\date +%s)" -v list="$list" -v typ="$typ" -v q="$fnd" -v echo_mode="$echo" -F"|" '
             function frecent(rank, time) {
               # relate frequency and time
               dx = t - time
@@ -156,11 +156,42 @@ _z() {
                     if( common ) {
                         printf "%-10s %s\n", "common:", common > "/dev/stderr"
                     }
-                    cmd = "sort -n >&2"
-                    for( x in matches ) {
-                        if( matches[x] ) {
-                            printf "%-10s %s\n", matches[x], x | cmd
+                    # When both -l and -e are passed, show scores (original behavior)
+                    if( echo_mode ) {
+                        cmd = "sort -n >&2"
+                        for( x in matches ) {
+                            if( matches[x] ) {
+                                printf "%-10s %s\n", matches[x], x | cmd
+                            }
                         }
+                    } else {
+                        # When only -l is passed, show rankings and output paths for selection
+                        # First, collect and sort all entries
+                        n = 0
+                        for( x in matches ) {
+                            if( matches[x] ) {
+                                n++
+                                paths[n] = x
+                                scores[n] = matches[x]
+                            }
+                        }
+
+                        # Sort by score (descending) - simple bubble sort
+                        for( i = 1; i <= n; i++ ) {
+                            for( j = i + 1; j <= n; j++ ) {
+                                if( scores[j] > scores[i] ) {
+                                    tmp = scores[i]; scores[i] = scores[j]; scores[j] = tmp
+                                    tmp = paths[i]; paths[i] = paths[j]; paths[j] = tmp
+                                }
+                            }
+                        }
+
+                        # Print with rankings to stderr and paths to stdout
+                        for( i = 1; i <= n; i++ ) {
+                            printf "%d) %s\n", i, paths[i] > "/dev/stderr"
+                            print paths[i]
+                        }
+                        return
                     }
                 } else {
                     if( common && !typ ) best_match = common
@@ -216,7 +247,35 @@ _z() {
 
         if [ "$?" -eq 0 ]; then
           if [ "$cd" ]; then
-            if [ "$echo" ]; then echo "$cd"; else builtin cd "$cd"; fi
+            # When -l is passed without -e, prompt for ranking selection
+            if [ "$list" -a -z "$echo" ]; then
+              # cd variable contains list of directories (one per line)
+              local -a dir_list
+              local line_num=0
+              while IFS= read -r line; do
+                dir_list[$line_num]="$line"
+                ((line_num++))
+              done <<< "$cd"
+
+              # Only prompt if we have multiple matches
+              if [ $line_num -gt 0 ]; then
+                local selection
+                printf "Select a directory (1-%d): " "$line_num" >&2
+                read selection
+
+                # Validate input is a number and within range
+                if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -ge 1 ] && [ "$selection" -le "$line_num" ]; then
+                  builtin cd "${dir_list[$((selection-1))]}"
+                else
+                  echo "Invalid selection" >&2
+                  return 1
+                fi
+              fi
+            elif [ "$echo" ]; then
+              echo "$cd"
+            else
+              builtin cd "$cd"
+            fi
           fi
         else
           return $?

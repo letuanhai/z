@@ -21,7 +21,8 @@
 #     * z foo bar # cd to most frecent dir matching foo and bar
 #     * z -r foo  # cd to highest ranked dir matching foo
 #     * z -t foo  # cd to most recently accessed dir matching foo
-#     * z -l foo  # list matches instead of cd
+#     * z -l foo  # list matches and cd to selected
+#     * z -le foo # list matches instead of cd
 #     * z -e foo  # echo the best match, don't cd
 #     * z -c foo  # restrict matches to subdirs of $PWD
 #     * z -x      # remove the current directory from the datafile
@@ -144,17 +145,18 @@ _z() {
         [ -f "$datafile" ] || return
 
         local cd
-        cd="$( < <( _z_dirs ) \awk -v t="$(\date +%s)" -v list="$list" -v typ="$typ" -v q="$fnd" -F"|" '
+        cd="$( < <( _z_dirs ) \awk -v t="$(\date +%s)" -v list="$list" -v echo="$echo" -v typ="$typ" -v q="$fnd" -F"|" '
             function frecent(rank, time) {
               # relate frequency and time
               dx = t - time
               return int(10000 * rank * (3.75/((0.0001 * dx + 1) + 0.25)))
             }
             function output(matches, best_match, common) {
-                # list or return the desired directory
-                if( list ) {
+                stderr = "/dev/stderr"
+                # print list of matches to stderr
+                if (list && echo) {
                     if( common ) {
-                        printf "%-10s %s\n", "common:", common > "/dev/stderr"
+                        printf "%-10s %s\n", "common:", common > stderr
                     }
                     cmd = "sort -n >&2"
                     for( x in matches ) {
@@ -162,7 +164,41 @@ _z() {
                             printf "%-10s %s\n", matches[x], x | cmd
                         }
                     }
-                } else {
+                }
+                else if (list) {
+                    n = 0
+                    for (x in matches) {
+                        if (matches[x]) {
+                            n++
+                            paths[n] = x
+                        }
+                    }
+                    # sort the arrays paths by score (matches[path[n]])
+                    # use Shell sort with optimised sequence (https://oeis.org/A102549)
+                    gaps_length = 6
+                    gaps[1] = 1;gaps[2] = 4;gaps[3] = 10;gaps[4] = 23;gaps[5] = 57;gaps[6] = 132
+                    for (gap_idx = gaps_length; gap_idx > 0; gap_idx--) {
+                        gap = gaps[gap_idx]
+                        for (i = gap + 1; i <= n; i++) {
+                            temp_path = paths[i]
+                            temp_score = matches[temp_path]
+                            for (j = i; j > gap &&
+                            matches[paths[j - gap]] < temp_score; j = j - gap) {
+                                paths[j] = paths[j - gap]
+                            }
+                            paths[j] = temp_path
+                        }
+                    }
+                    # output sorted paths
+                    for (i = n; i > 0; i--) {
+                        printf("%-10s %s %s\n", matches[paths[i]], i, paths[i]) > stderr
+                    }
+                    # print user selection
+                    printf("(1-%s)> ",n) > stderr
+                    getline selected < "/dev/tty"
+                    print paths[selected]
+                }
+                else {
                     if( common && !typ ) best_match = common
                     print best_match
                 }
